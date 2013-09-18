@@ -180,11 +180,11 @@ Example:
 * "myPkg:MyType" marker of object **matches** "myPkg:MyType" marker of type
 	* because they are equal
 * "myPkg:MyType :MyOtherType" marker of object **matches** "myPkg:MyType" marker of type
-	* because it starts with it the next character is unescaped space
+	* because starts with it and the next character is unescaped space
 * "myPkg:MyType :MyOtherType :MyOtherType2" marker of object **matches** "myPkg:MyType :MyOtherType" marker of type
-	* because it starts with it the next character is unescaped space
+	* because starts with it and the next character is unescaped space
 * "myPkg:MyType :MyOtherType" marker of object **doesn't match** "myPkg:MyType2" marker of type
-	* because it starts with it, but the next character is not unescaped space
+	* because starts with it, but the next character is not space
 
 ## License
 
