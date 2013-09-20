@@ -38,10 +38,10 @@ Type id format:
 
 `packageName{URI}(versionSpecifier):idWithinPackage`
 
-* `{URI}` part is optional if package is registered in [npm](https://npmjs.org/) under packageName, because this makes packageName unique enough
+* `{URI}` part is optional if package is registered in [npm](https://npmjs.org/) under packageName specified, because this makes packageName unique enough
+* packageName is optional if URI is specified and already contains package name
 * `(versionSpecifier)` part is optional and can use whatever agreements you want for your package versioning
 	* it's recommended to use version specifiers compatible with used by [npm](https://npmjs.org/)
-* `packageName{URI}(versionSpecifier)` part can be skipped if your type inherits another marked type with fully qualified id within the same package
 * `idWithinPackage` part is unique type id within your package
 	* it can use semicolons to separate it's parts
 	* it's recommended to use type name as idWithinPackage whenever possible
@@ -58,7 +58,6 @@ It's recommended to:
 
 Escaping:
 
-* If any part of your id contains " " (space) characters, they must be escaped with "\" (backslash)
 * If packageName part contains ":" (semicolon) characters, they must be escaped with "\" (backslash)
 * If URI part contains "}" characters, they must be escaped with "\" (backslash)
 * If versionSpecifier part contains ")" characters, they must be escaped with "\" (backslash)
@@ -69,12 +68,12 @@ Id examples:
 * `myPkg:(server):MyType`
 * `myPkg:lib/client:MyType`
 * `myPkg{http://myprojectpage.com/myPkg}:(client):MyType`
+* `{http://myprojectpage.com/myOtherPkg}:(client):MyType`
 * `myPkg(>=0.1.0):MyType`
-* `:MyType` - only acceptable for subtypes of marked type within the same package (see above)
 
-## Subtypes
+## Inheritance
 
-marked_types works correctly with subtypes, because when you mark subtype of already marked type, it actually use concatenation of supertype marker and type id as a marker for subtype. When type is checked, marked_types checks that marker of object starts with marker of type. See "Internals" below for details.
+It works well with inherited types as far as they have correct `super_` property referencing supertype. To distinguish type from it's marked supertypes, the type itself should be marked too. See "Usage" and "Internals" below for details.
 
 ## Types Versioning
 
@@ -95,9 +94,7 @@ This case:
 
 Note, that versionSpecifier has no direct relation to your package version. For marked_types it's just part of id and have no special meaning. But you can use it to do tricks described above.
 
-Also note, that this "versioning" can be broken by changing inheritance structure, because the way marked_types works (see "Internals" below).
-
-## Library Usage
+## Usage
 
 You can mark type when it is declared:
 
@@ -149,42 +146,11 @@ mt.is(obj3, MyOtherType); // false
 
 ## Internals
 
-Marked types attaches `typeMarker_` property to type itself and it's prototype. This way both type and it's instances will have this property.
+`mark(type, id)` sets `typeMarker_` property of type to id specified.
 
-If type have no marked supertypes, `typeMarker_` value will be set to id specified in `mark()` call.
+`is(obj, type)` gets marker of `type` or it's nearest marked supertype (if `type` itself has no marker) and returns true if the marker obtained is the same as marker of `obj.constructor` or one of it's supertypes. It uses `super_` property to get supertypes.
 
-Otherwise marker is concatenation of the marker of nearest marked supertype and id specified. Space character is used as separator for resulting ids chain.
-
-Example:
-
-```js
-var MyType = function () {
-};
-mt.mark(MyType, 'myPkg:MyType');
-
-var MyOtherType = function () {
-};
-inherits(MyOtherType, MyType);
-mt.mark(MyOtherType, 'myPkg:MyOtherType');
-
-MyType.typeMarker_; // "myPkg:MyType"
-MyOtherType.typeMarker_; // "myPkg:MyType myPkg:MyOtherType"
-```
-
-### Type Checking
-
-`is(obj, type)` function returns true if type or it's nearest marked supertype has marker matching to one of obj. Markers match if marker of object is equal to marker of type or if it starts with marker of type and the next character is unescaped " " (space) character. Supertypes are obtained using `super_` property.
-
-Example:
-
-* "myPkg:MyType" marker of object **matches** "myPkg:MyType" marker of type
-	* because they are equal
-* "myPkg:MyType :MyOtherType" marker of object **matches** "myPkg:MyType" marker of type
-	* because starts with it and the next character is unescaped space
-* "myPkg:MyType :MyOtherType :MyOtherType2" marker of object **matches** "myPkg:MyType :MyOtherType" marker of type
-	* because starts with it and the next character is unescaped space
-* "myPkg:MyType :MyOtherType" marker of object **doesn't match** "myPkg:MyType2" marker of type
-	* because starts with it, but the next character is not space
+Note, that internals can be changed in future implementations.
 
 ## License
 
